@@ -21,6 +21,7 @@ public class Utils {
                 next.set(Calendar.SECOND, 0);
 
                 nextIsSet = true;
+                break;
             }
         }
 

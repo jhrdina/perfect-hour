@@ -1,6 +1,7 @@
 package cz.hrdinajan.perfecthour;
 
 
+import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 
@@ -9,6 +10,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
+import android.util.Log;
+
+import java.util.Calendar;
 
 public class NotificationReceiver extends BroadcastReceiver {
     public NotificationReceiver() {
@@ -28,8 +32,24 @@ public class NotificationReceiver extends BroadcastReceiver {
         stackBuilder.addParentStack(MainActivity.class);
         stackBuilder.addNextIntent(resultIntent);
         PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
         mBuilder.setContentIntent(resultPendingIntent);
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(1, mBuilder.build());
+
+        //
+        PerfectHourApplication app = (PerfectHourApplication) context.getApplicationContext();
+        if (!app.isEnabled()) {
+            Log.d("perfect", "Disabled");
+            return;
+        }
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        Calendar next = Utils.findNext(app.getMinutePoints());
+        Log.d("perfect", next.toString());
+
+        alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pendingIntent);
     }
 }

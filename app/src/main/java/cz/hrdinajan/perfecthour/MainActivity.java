@@ -6,10 +6,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+
+import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,16 +29,42 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                     startNotifications();
+                } else {
+                    stopNotifications();
                 }
             }
         });
     }
 
     private void startNotifications() {
+        final PerfectHourApplication app = (PerfectHourApplication) getApplicationContext();
+        if (app.isEnabled()) {
+            return;
+        }
+
         Intent alarmIntent = new Intent(this, NotificationReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 5000, pendingIntent);
+
+        Calendar next = Utils.findNext(app.getMinutePoints());
+        Log.d("perfect", next.toString());
+
+        app.setEnabled(true);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pendingIntent);
+    }
+
+    private void stopNotifications() {
+        final PerfectHourApplication app = (PerfectHourApplication) getApplicationContext();
+        if (!app.isEnabled()) {
+            return;
+        }
+
+        app.setEnabled(false);
+
+        Intent alarmIntent = new Intent(this, NotificationReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmManager.cancel(pendingIntent);
     }
 
     @Override
