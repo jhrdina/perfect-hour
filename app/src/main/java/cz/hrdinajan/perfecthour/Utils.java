@@ -34,4 +34,17 @@ public class Utils {
 
         return next;
     }
+
+    public static ArrayList<Integer> getFixedMinutePoints() {
+        ArrayList<Integer> minutePoints = new ArrayList<>();
+        minutePoints.add(0);
+        minutePoints.add(50);
+
+        /*for (int i = 0; i < 60; i++) {
+            minutePoints.add(i);
+        }*/
+
+        return minutePoints;
+    }
+
 }
