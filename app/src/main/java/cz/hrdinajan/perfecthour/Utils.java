@@ -35,14 +35,17 @@ public class Utils {
         return next;
     }
 
-    public static ArrayList<Integer> getFixedMinutePoints() {
+    public static ArrayList<Integer> getFixedMinutePoints(boolean debug) {
         ArrayList<Integer> minutePoints = new ArrayList<>();
-        minutePoints.add(0);
-        minutePoints.add(50);
 
-        /*for (int i = 0; i < 60; i++) {
-            minutePoints.add(i);
-        }*/
+        if (debug) {
+            for (int i = 0; i < 60; i++) {
+                minutePoints.add(i);
+            }
+        } else {
+            minutePoints.add(0);
+            minutePoints.add(50);
+        }
 
         return minutePoints;
     }
