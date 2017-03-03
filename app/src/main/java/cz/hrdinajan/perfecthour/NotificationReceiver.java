@@ -18,6 +18,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import java.util.Calendar;
+import java.util.TreeSet;
 
 public class NotificationReceiver extends BroadcastReceiver {
     public static final int INTENT_ID = 0;
@@ -26,6 +27,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 
     public static final String KEY_PREF_NOTIFICATION_SOUND = "notification_sound";
     public static final String KEY_PREF_DEBUG_ENABLED = "debug_enabled";
+    public static final String KEY_PREF_MINUTE_POINTS = "minute_points";
 
     public NotificationReceiver() {
     }
@@ -74,8 +76,15 @@ public class NotificationReceiver extends BroadcastReceiver {
         if (enabled) {
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
             Boolean debugEnabled = sharedPref.getBoolean(KEY_PREF_DEBUG_ENABLED, false);
+            TreeSet<Integer> minPoints = debugEnabled
+                    ? Utils.getDebugMinutePoints()
+                    : Utils.minutePointsFromStringSet(sharedPref.getStringSet(KEY_PREF_MINUTE_POINTS, null));
 
-            Calendar next = Utils.findNext(Utils.getFixedMinutePoints(debugEnabled));
+            if (minPoints == null) {
+                minPoints = Utils.getDefaultMinutePoints();
+            }
+
+            Calendar next = Utils.findNext(minPoints);
             Log.d("perfect", next.toString());
 
             alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pendingIntent);

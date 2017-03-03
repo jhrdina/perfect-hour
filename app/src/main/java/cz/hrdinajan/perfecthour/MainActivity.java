@@ -1,13 +1,17 @@
 package cz.hrdinajan.perfecthour;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+
+import java.util.TreeSet;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,6 +31,29 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 NotificationReceiver.setEnabled(isChecked, activity);
+            }
+        });
+
+        // Get minutePoints from settings
+        final SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        TreeSet<Integer> minPoints = Utils.minutePointsFromStringSet(sharedPref.getStringSet("minute_points", null));
+        if (minPoints == null) {
+            minPoints = Utils.getDefaultMinutePoints();
+        }
+
+        HourDial hourDial = (HourDial) findViewById(R.id.hour_dial);
+        hourDial.setStops(minPoints);
+        hourDial.setMinPointsChangeListener(new HourDial.MinPointsChangeListener() {
+            @Override
+            public void onChange(TreeSet<Integer> minPoints) {
+                SharedPreferences.Editor e = sharedPref.edit();
+                e.putStringSet("minute_points", Utils.minutePointsToStringSet(minPoints));
+                e.apply();
+
+                if (NotificationReceiver.isEnabled(activity)) {
+                    NotificationReceiver.setEnabled(false, activity);
+                    NotificationReceiver.setEnabled(true, activity);
+                };
             }
         });
     }

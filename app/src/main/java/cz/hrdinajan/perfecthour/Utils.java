@@ -1,11 +1,12 @@
 package cz.hrdinajan.perfecthour;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class Utils {
-    public static Calendar findNext(ArrayList<Integer> minutePoints) {
+    public static Calendar findNext(TreeSet<Integer> minutePoints) {
         Calendar now = GregorianCalendar.getInstance();
         now.add(Calendar.SECOND, 3);
         now.set(Calendar.MILLISECOND, 0);
@@ -26,7 +27,7 @@ public class Utils {
         }
 
         if (!nextIsSet) {
-            next.set(Calendar.MINUTE, minutePoints.get(0));
+            next.set(Calendar.MINUTE, minutePoints.first());
             next.set(Calendar.SECOND, 0);
 
             next.add(Calendar.HOUR_OF_DAY, 1);
@@ -34,20 +35,39 @@ public class Utils {
 
         return next;
     }
-
-    public static ArrayList<Integer> getFixedMinutePoints(boolean debug) {
-        ArrayList<Integer> minutePoints = new ArrayList<>();
-
-        if (debug) {
-            for (int i = 0; i < 60; i++) {
-                minutePoints.add(i);
-            }
-        } else {
-            minutePoints.add(0);
-            minutePoints.add(50);
+    
+    public static TreeSet<Integer> getDebugMinutePoints() {
+        TreeSet<Integer> minPoints = new TreeSet<>();
+        for (int i = 0; i < 60; i++) {
+            minPoints.add(i);
         }
-
-        return minutePoints;
+        return minPoints;
     }
 
+    public static TreeSet<Integer> getDefaultMinutePoints() {
+        TreeSet<Integer> minPoints = new TreeSet<>();
+        minPoints.add(0);
+        minPoints.add(50);
+        return minPoints;
+    }
+
+    public static TreeSet<Integer> minutePointsFromStringSet(Set<String> strSet) {
+        if (strSet == null) return null;
+
+        TreeSet<Integer> minPoints = new TreeSet<>();
+        for (String strVal : strSet) {
+            minPoints.add(Integer.parseInt(strVal));
+        }
+        return minPoints;
+    }
+
+    public static Set<String> minutePointsToStringSet(TreeSet<Integer> minPoints) {
+        if (minPoints == null) return null;
+
+        Set<String> strSet = new TreeSet<>();
+        for (Integer minPoint : minPoints) {
+            strSet.add(Integer.toString(minPoint));
+        }
+        return strSet;
+    }
 }

@@ -20,6 +20,10 @@ import java.util.TreeSet;
  */
 public class HourDial extends View {
 
+    public interface MinPointsChangeListener {
+        void onChange(TreeSet<Integer> minPoints);
+    }
+
     private static final int colors[] = new int[] {
             Color.parseColor("#00bcd4"),
             Color.parseColor("#ffc107"),
@@ -34,8 +38,19 @@ public class HourDial extends View {
     private final static float mmw = 1, mmh = 7, mw = 0.5f, mh = 6;
 
     private int movedStop = -1;
+    private int movedNewStop = -1;
+    private MinPointsChangeListener minPointsChangeListener;
 
-    private TreeSet<Integer> mStops;
+    public TreeSet<Integer> getStops() {
+        return mMinPoints;
+    }
+
+    public void setStops(TreeSet<Integer> mMinPoints) {
+        this.mMinPoints = mMinPoints;
+        invalidate();
+    }
+
+    private TreeSet<Integer> mMinPoints;
 
 
     public HourDial(Context context) {
@@ -60,13 +75,16 @@ public class HourDial extends View {
         final TypedArray a = getContext().obtainStyledAttributes(
                 attrs, R.styleable.HourDial, defStyle, 0);
 
-        mStops = new TreeSet<>();
-        mStops.add(0);
-        mStops.add(50);
+        mMinPoints = new TreeSet<>();
+        mMinPoints.add(0);
+        mMinPoints.add(50);
 
         a.recycle();
     }
-    private int movedNewStop = -1;
+
+    public void setMinPointsChangeListener(MinPointsChangeListener minPointsChangeListener) {
+        this.minPointsChangeListener = minPointsChangeListener;
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -75,7 +93,7 @@ public class HourDial extends View {
 
         switch(action) {
             case MotionEvent.ACTION_DOWN:
-                for (int minuteStop : mStops) {
+                for (int minuteStop : mMinPoints) {
                     float origPoint[] = new float[2];
                     getTriangleMatrix(minuteStop, true).mapPoints(origPoint, new float[]{event.getX(), event.getY()});
                     if ((new RectF(-tw/1.5f, -2*th, tw/1.5f, th)).contains(origPoint[0], origPoint[1])) {
@@ -96,9 +114,13 @@ public class HourDial extends View {
 
                 break;
             case MotionEvent.ACTION_UP:
-                mStops.remove(movedStop);
-                mStops.add(movedNewStop);
+                mMinPoints.remove(movedStop);
+                // TODO: Check for existing stops
+                mMinPoints.add(movedNewStop);
                 movedStop = -1;
+                if (minPointsChangeListener != null) {
+                    minPointsChangeListener.onChange(mMinPoints);
+                }
                 invalidate();
                 break;
         }
@@ -157,7 +179,7 @@ public class HourDial extends View {
         Matrix pathMatrix = new Matrix();
 
         int prevMin = -1;
-        for (int minuteStop : mStops) {
+        for (int minuteStop : mMinPoints) {
             if (movedStop == minuteStop) {
                 minuteStop = movedNewStop;
             }
@@ -182,13 +204,13 @@ public class HourDial extends View {
             prevMin = minuteStop;
         }
 
-        if (prevMin != -1 && mStops.size() != 0) {
+        if (prevMin != -1 && mMinPoints.size() != 0) {
             if (colorIndex == 0) {
                 colorIndex++;
                 p.setColor(colors[colorIndex]);
             }
 
-            canvas.drawArc(new RectF(-br, -br, br, br), -90 + 360/60 * prevMin, 360 / 60 * (60 - prevMin + mStops.first()), false, p);
+            canvas.drawArc(new RectF(-br, -br, br, br), -90 + 360/60 * prevMin, 360 / 60 * (60 - prevMin + mMinPoints.first()), false, p);
         }
     }
 
