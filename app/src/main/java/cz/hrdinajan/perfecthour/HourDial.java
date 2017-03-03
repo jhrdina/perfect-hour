@@ -4,24 +4,39 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
-import android.text.TextPaint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.TreeSet;
 
 /**
  * TODO: document your custom view class.
  */
 public class HourDial extends View {
-    private String mExampleString; // TODO: use a default from R.string...
-    private int mExampleColor = Color.RED; // TODO: use a default from R.color...
-    private float mExampleDimension = 0; // TODO: use a default from R.dimen...
-    private Drawable mExampleDrawable;
 
-    private TextPaint mTextPaint;
-    private float mTextWidth;
-    private float mTextHeight;
+    private static final int colors[] = new int[] {
+            Color.parseColor("#00bcd4"),
+            Color.parseColor("#ffc107"),
+            Color.parseColor("#f44336")
+    };
+
+    private final static float relSize = 100;
+    private final static float hw = 7, hh = 7, ht = 2;
+    private final static float hts = 4;
+    private final static float tw = 7, th = 6;
+    private final static float bt = 8;
+    private final static float mmw = 1, mmh = 7, mw = 0.5f, mh = 6;
+
+    private int movedStop = -1;
+
+    private TreeSet<Integer> mStops;
+
 
     public HourDial(Context context) {
         super(context);
@@ -39,151 +54,177 @@ public class HourDial extends View {
     }
 
     private void init(AttributeSet attrs, int defStyle) {
+        setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+
         // Load attributes
         final TypedArray a = getContext().obtainStyledAttributes(
                 attrs, R.styleable.HourDial, defStyle, 0);
 
-        mExampleString = a.getString(
-                R.styleable.HourDial_exampleString);
-        mExampleColor = a.getColor(
-                R.styleable.HourDial_exampleColor,
-                mExampleColor);
-        // Use getDimensionPixelSize or getDimensionPixelOffset when dealing with
-        // values that should fall on pixel boundaries.
-        mExampleDimension = a.getDimension(
-                R.styleable.HourDial_exampleDimension,
-                mExampleDimension);
-
-        if (a.hasValue(R.styleable.HourDial_exampleDrawable)) {
-            mExampleDrawable = a.getDrawable(
-                    R.styleable.HourDial_exampleDrawable);
-            mExampleDrawable.setCallback(this);
-        }
+        mStops = new TreeSet<>();
+        mStops.add(0);
+        mStops.add(50);
 
         a.recycle();
-
-        // Set up a default TextPaint object
-        mTextPaint = new TextPaint();
-        mTextPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
-        mTextPaint.setTextAlign(Paint.Align.LEFT);
-
-        // Update TextPaint and text measurements from attributes
-        invalidateTextPaintAndMeasurements();
     }
+    private int movedNewStop = -1;
 
-    private void invalidateTextPaintAndMeasurements() {
-        mTextPaint.setTextSize(mExampleDimension);
-        mTextPaint.setColor(mExampleColor);
-        mTextWidth = mTextPaint.measureText(mExampleString);
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
 
-        Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
-        mTextHeight = fontMetrics.bottom;
+        final int action = MotionEventCompat.getActionMasked(event);
+
+        switch(action) {
+            case MotionEvent.ACTION_DOWN:
+                for (int minuteStop : mStops) {
+                    float origPoint[] = new float[2];
+                    getTriangleMatrix(minuteStop, true).mapPoints(origPoint, new float[]{event.getX(), event.getY()});
+                    if ((new RectF(-tw/1.5f, -2*th, tw/1.5f, th)).contains(origPoint[0], origPoint[1])) {
+                        // This minuteStop move has started!
+                        movedStop = minuteStop;
+                        invalidate();
+                        return true;
+                    }
+                }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (movedStop != -1) {
+                    float origPoint[] = new float[2];
+                    getBaseMatrix(true).mapPoints(origPoint, new float[]{event.getX(), event.getY()});
+                    movedNewStop = Math.round((computeAngle(origPoint[0], origPoint[1]) + 90) * 60 / 360);
+                    invalidate();
+                }
+
+                break;
+            case MotionEvent.ACTION_UP:
+                mStops.remove(movedStop);
+                mStops.add(movedNewStop);
+                movedStop = -1;
+                invalidate();
+                break;
+        }
+
+        return super.onTouchEvent(event);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // TODO: consider storing these as member variables to reduce
-        // allocations per draw cycle.
-        int paddingLeft = getPaddingLeft();
-        int paddingTop = getPaddingTop();
-        int paddingRight = getPaddingRight();
-        int paddingBottom = getPaddingBottom();
+        float br = relSize/2 - hh - hts - th - bt / 2;
 
-        int contentWidth = getWidth() - paddingLeft - paddingRight;
-        int contentHeight = getHeight() - paddingTop - paddingBottom;
+        canvas.concat(getBaseMatrix(false));
 
-        // Draw the text.
-        canvas.drawText(mExampleString,
-                paddingLeft + (contentWidth - mTextWidth) / 2,
-                paddingTop + (contentHeight + mTextHeight) / 2,
-                mTextPaint);
+        Paint mPaint = new Paint();
+        mPaint.setColor(Color.WHITE);
+        mPaint.setStyle(Paint.Style.STROKE);
+        mPaint.setAntiAlias(true);
 
-        // Draw the example drawable on top of the text.
-        if (mExampleDrawable != null) {
-            mExampleDrawable.setBounds(paddingLeft, paddingTop,
-                    paddingLeft + contentWidth, paddingTop + contentHeight);
-            mExampleDrawable.draw(canvas);
+        for (int min = 0; min < 60; min += 5) {
+            canvas.save();
+            canvas.rotate(360/60 * min);
+            if (min % 15 == 0) {
+                mPaint.setStrokeWidth(mmw);
+                canvas.drawLine(0, -br, 0, -br + mmh, mPaint);
+            } else {
+                mPaint.setStrokeWidth(mw);
+                canvas.drawLine(0, -br, 0, -br + mh, mPaint);
+            }
+            canvas.restore();
+        }
+
+        // Triangles/bars
+
+        Paint trianglePaint = new Paint();
+        trianglePaint.setColor(Color.WHITE);
+        trianglePaint.setStyle(Paint.Style.FILL);
+        trianglePaint.setAntiAlias(true);
+        trianglePaint.setDither(true);
+
+        Path trianglePath = new Path();
+        trianglePath.moveTo(0, 0);
+        trianglePath.lineTo(-tw/2, -th);
+        trianglePath.lineTo(tw/2, -th);
+        trianglePath.lineTo(0, 0);
+        trianglePath.close();
+
+        Paint p = new Paint();
+        int colorIndex = 0;
+        p.setColor(colors[colorIndex]);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(bt);
+        p.setAntiAlias(true);
+
+        Matrix pathMatrix = new Matrix();
+
+        int prevMin = -1;
+        for (int minuteStop : mStops) {
+            if (movedStop == minuteStop) {
+                minuteStop = movedNewStop;
+            }
+
+            // Triangle
+            canvas.save();
+
+            canvas.rotate(360 / 60 * minuteStop);
+            canvas.translate(0, -(br + bt/2));
+            canvas.drawPath(trianglePath, trianglePaint);
+
+            canvas.restore();
+
+            // Arc
+            if (prevMin != -1) {
+                canvas.drawArc(new RectF(-br, -br, br, br), -90 + 360/60 * prevMin, 360 / 60 * (minuteStop - prevMin), false, p);
+
+                colorIndex = (colorIndex + 1) % colors.length;
+                p.setColor(colors[colorIndex]);
+            }
+
+            prevMin = minuteStop;
+        }
+
+        if (prevMin != -1 && mStops.size() != 0) {
+            if (colorIndex == 0) {
+                colorIndex++;
+                p.setColor(colors[colorIndex]);
+            }
+
+            canvas.drawArc(new RectF(-br, -br, br, br), -90 + 360/60 * prevMin, 360 / 60 * (60 - prevMin + mStops.first()), false, p);
         }
     }
 
-    /**
-     * Gets the example string attribute value.
-     *
-     * @return The example string attribute value.
-     */
-    public String getExampleString() {
-        return mExampleString;
+    private Matrix getBaseMatrix(boolean inverse) {
+        float size = Math.min(getWidth(), getHeight());
+
+
+        Matrix m = new Matrix();
+        m.preTranslate(getWidth() / 2, getHeight() / 2);
+        m.preScale(size / relSize, size / relSize);
+
+        if (inverse) {
+            //Matrix inv = new Matrix();
+            m.invert(m);
+            //return m;
+        }
+        return m;
     }
 
-    /**
-     * Sets the view's example string attribute value. In the example view, this string
-     * is the text to draw.
-     *
-     * @param exampleString The example string attribute value to use.
-     */
-    public void setExampleString(String exampleString) {
-        mExampleString = exampleString;
-        invalidateTextPaintAndMeasurements();
+    private Matrix getTriangleMatrix(int minuteStop, boolean inverse) {
+        float br = relSize/2 - hh - hts - th - bt / 2;
+        Matrix m = getBaseMatrix(false);
+        m.preRotate(360 / 60 * minuteStop);
+        m.preTranslate(0, -(br + bt/2));
+        if (inverse) {
+            m.invert(m);
+        }
+        return m;
     }
 
-    /**
-     * Gets the example color attribute value.
-     *
-     * @return The example color attribute value.
-     */
-    public int getExampleColor() {
-        return mExampleColor;
-    }
-
-    /**
-     * Sets the view's example color attribute value. In the example view, this color
-     * is the font color.
-     *
-     * @param exampleColor The example color attribute value to use.
-     */
-    public void setExampleColor(int exampleColor) {
-        mExampleColor = exampleColor;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example dimension attribute value.
-     *
-     * @return The example dimension attribute value.
-     */
-    public float getExampleDimension() {
-        return mExampleDimension;
-    }
-
-    /**
-     * Sets the view's example dimension attribute value. In the example view, this dimension
-     * is the font size.
-     *
-     * @param exampleDimension The example dimension attribute value to use.
-     */
-    public void setExampleDimension(float exampleDimension) {
-        mExampleDimension = exampleDimension;
-        invalidateTextPaintAndMeasurements();
-    }
-
-    /**
-     * Gets the example drawable attribute value.
-     *
-     * @return The example drawable attribute value.
-     */
-    public Drawable getExampleDrawable() {
-        return mExampleDrawable;
-    }
-
-    /**
-     * Sets the view's example drawable attribute value. In the example view, this drawable is
-     * drawn above the text.
-     *
-     * @param exampleDrawable The example drawable attribute value to use.
-     */
-    public void setExampleDrawable(Drawable exampleDrawable) {
-        mExampleDrawable = exampleDrawable;
+    private static float computeAngle(float x, float y) {
+        if      (x > 0) return (float)Math.toDegrees(Math.atan(y/x));
+        else if (x < 0) return (float)Math.toDegrees(Math.atan(y/x)) + 180;
+        else { // x == 0
+            if (y > 0) return 90;
+            else return 0;
+        }
     }
 }
