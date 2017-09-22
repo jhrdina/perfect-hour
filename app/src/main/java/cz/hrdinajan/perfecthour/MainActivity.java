@@ -8,12 +8,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.ImageButton;
 import android.widget.Switch;
 
 import java.util.TreeSet;
 
 public class MainActivity extends AppCompatActivity {
+
+    private TreeSet<Integer> minPoints;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,12 +40,12 @@ public class MainActivity extends AppCompatActivity {
 
         // Get minutePoints from settings
         final SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        TreeSet<Integer> minPoints = Utils.minutePointsFromStringSet(sharedPref.getStringSet("minute_points", null));
+        minPoints = Utils.minutePointsFromStringSet(sharedPref.getStringSet("minute_points", null));
         if (minPoints == null) {
             minPoints = Utils.getDefaultMinutePoints();
         }
 
-        HourDial hourDial = (HourDial) findViewById(R.id.hour_dial);
+        final HourDial hourDial = (HourDial) findViewById(R.id.hour_dial);
         hourDial.setStops(minPoints);
         hourDial.setMinPointsChangeListener(new HourDial.MinPointsChangeListener() {
             @Override
@@ -49,6 +53,40 @@ public class MainActivity extends AppCompatActivity {
                 SharedPreferences.Editor e = sharedPref.edit();
                 e.putStringSet("minute_points", Utils.minutePointsToStringSet(minPoints));
                 e.apply();
+
+                if (NotificationReceiver.isEnabled(activity)) {
+                    NotificationReceiver.setEnabled(false, activity);
+                    NotificationReceiver.setEnabled(true, activity);
+                };
+            }
+        });
+
+        // TODO: Remove duplicit code
+
+        ImageButton addBtn = (ImageButton) findViewById(R.id.addPointButton);
+        addBtn.setOnClickListener(new ImageButton.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences.Editor e = sharedPref.edit();
+                e.putStringSet("minute_points", Utils.minutePointsToStringSet(Utils.addPoint(minPoints)));
+                e.apply();
+                hourDial.invalidate();
+
+                if (NotificationReceiver.isEnabled(activity)) {
+                    NotificationReceiver.setEnabled(false, activity);
+                    NotificationReceiver.setEnabled(true, activity);
+                };
+            }
+        });
+
+        ImageButton removeBtn = (ImageButton) findViewById(R.id.removePointButton);
+        removeBtn.setOnClickListener(new ImageButton.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences.Editor e = sharedPref.edit();
+                e.putStringSet("minute_points", Utils.minutePointsToStringSet(Utils.removePoint(minPoints)));
+                e.apply();
+                hourDial.invalidate();
 
                 if (NotificationReceiver.isEnabled(activity)) {
                     NotificationReceiver.setEnabled(false, activity);

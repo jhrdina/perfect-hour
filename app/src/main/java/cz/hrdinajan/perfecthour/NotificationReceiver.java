@@ -25,6 +25,7 @@ public class NotificationReceiver extends BroadcastReceiver {
     public static final int NOTIFICATION_ID = 1;
     public static final int CONTENT_INTENT_ID = 1;
 
+    public static final String KEY_PREF_VIBRATION_ENABLED = "vibration_enabled";
     public static final String KEY_PREF_NOTIFICATION_SOUND = "notification_sound";
     public static final String KEY_PREF_DEBUG_ENABLED = "debug_enabled";
     public static final String KEY_PREF_MINUTE_POINTS = "minute_points";
@@ -36,17 +37,17 @@ public class NotificationReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         String notificationSoundUriStr = sharedPref.getString(KEY_PREF_NOTIFICATION_SOUND, "");
+        Boolean vibrationEnabled = sharedPref.getBoolean(KEY_PREF_VIBRATION_ENABLED, true);
 
         Uri notificationSoundUri = notificationSoundUriStr != "" ?
                 Uri.parse(notificationSoundUriStr) : RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-
 
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(context)
                         .setSmallIcon(R.drawable.ic_timelapse_white_24dp)
                         .setContentTitle(context.getResources().getString(R.string.message_box_title))
                         .setContentText(context.getResources().getString(R.string.message_timesheet_not_up_to_date))
-                        .setDefaults(NotificationCompat.DEFAULT_VIBRATE | NotificationCompat.DEFAULT_LIGHTS)
+                        .setDefaults((vibrationEnabled ? NotificationCompat.DEFAULT_VIBRATE : 0) | NotificationCompat.DEFAULT_LIGHTS)
                         .setSound(notificationSoundUri)
                         .setColor(ContextCompat.getColor(context, R.color.colorPrimary));
 

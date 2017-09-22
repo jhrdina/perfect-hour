@@ -10,6 +10,13 @@
         android:defaultValue="content://settings/system/notification_sound" />
 
     <CheckBoxPreference
+        android:key="vibration_enabled"
+        android:title="@string/pref_title_vibration_enabled"
+        android:summaryOn="@string/pref_summary_vibration_enabled"
+        android:summaryOff="@string/pref_summary_vibration_disabled"
+        android:defaultValue="true" />
+
+    <CheckBoxPreference
         android:key="debug_enabled"
         android:title="@string/pref_title_debug_enabled"
         android:summaryOn="@string/pref_summary_debug_enabled"

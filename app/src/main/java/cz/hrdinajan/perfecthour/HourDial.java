@@ -8,7 +8,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
-import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,6 +36,7 @@ public class HourDial extends View {
     private final static float bt = 8;
     private final static float mmw = 1, mmh = 7, mw = 0.5f, mh = 6;
 
+    private TreeSet<Integer> mMinPoints;
     private int movedStop = -1;
     private int movedNewStop = -1;
     private MinPointsChangeListener minPointsChangeListener;
@@ -49,9 +49,6 @@ public class HourDial extends View {
         this.mMinPoints = mMinPoints;
         invalidate();
     }
-
-    private TreeSet<Integer> mMinPoints;
-
 
     public HourDial(Context context) {
         super(context);
@@ -89,7 +86,7 @@ public class HourDial extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        final int action = MotionEventCompat.getActionMasked(event);
+        final int action = event.getActionMasked();
 
         switch(action) {
             case MotionEvent.ACTION_DOWN:
@@ -99,6 +96,7 @@ public class HourDial extends View {
                     if ((new RectF(-tw/1.5f, -2*th, tw/1.5f, th)).contains(origPoint[0], origPoint[1])) {
                         // This minuteStop move has started!
                         movedStop = minuteStop;
+                        movedNewStop = minuteStop;
                         invalidate();
                         return true;
                     }
@@ -108,7 +106,7 @@ public class HourDial extends View {
                 if (movedStop != -1) {
                     float origPoint[] = new float[2];
                     getBaseMatrix(true).mapPoints(origPoint, new float[]{event.getX(), event.getY()});
-                    movedNewStop = Math.round((computeAngle(origPoint[0], origPoint[1]) + 90) * 60 / 360);
+                    movedNewStop = Math.round((computeAngle(origPoint[0], origPoint[1]) + 90) * 60 / 360) % 60;
                     invalidate();
                 }
 
@@ -118,6 +116,7 @@ public class HourDial extends View {
                 // TODO: Check for existing stops
                 mMinPoints.add(movedNewStop);
                 movedStop = -1;
+                movedNewStop = -1;
                 if (minPointsChangeListener != null) {
                     minPointsChangeListener.onChange(mMinPoints);
                 }
@@ -178,8 +177,17 @@ public class HourDial extends View {
 
         Matrix pathMatrix = new Matrix();
 
+        TreeSet<Integer> drawnMinPoints;
+        if (movedStop != -1) {
+            drawnMinPoints =  new TreeSet<>(mMinPoints);
+            drawnMinPoints.remove(movedStop);
+            drawnMinPoints.add(movedNewStop);
+        } else {
+            drawnMinPoints = mMinPoints;
+        }
+
         int prevMin = -1;
-        for (int minuteStop : mMinPoints) {
+        for (int minuteStop : drawnMinPoints) {
             if (movedStop == minuteStop) {
                 minuteStop = movedNewStop;
             }
@@ -204,13 +212,13 @@ public class HourDial extends View {
             prevMin = minuteStop;
         }
 
-        if (prevMin != -1 && mMinPoints.size() != 0) {
+        if (prevMin != -1 && drawnMinPoints.size() != 0) {
             if (colorIndex == 0) {
                 colorIndex++;
                 p.setColor(colors[colorIndex]);
             }
 
-            canvas.drawArc(new RectF(-br, -br, br, br), -90 + 360/60 * prevMin, 360 / 60 * (60 - prevMin + mMinPoints.first()), false, p);
+            canvas.drawArc(new RectF(-br, -br, br, br), -90 + 360/60 * prevMin, 360 / 60 * (60 - prevMin + drawnMinPoints.first()), false, p);
         }
     }
 

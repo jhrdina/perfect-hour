@@ -58,6 +58,10 @@
 
     <string name="pref_title_notification_sound">Ringtone</string>
 
+    <string name="pref_title_vibration_enabled">Vibrations</string>
+    <string name="pref_summary_vibration_enabled">Notifications will vibrate</string>
+    <string name="pref_summary_vibration_disabled">Notifications won\'t vibrate</string>
+
     <string name="pref_notification_no_sound">Silent</string>
     <string name="pref_title_debug_enabled">Debug enabled</string>
     <string name="pref_summary_debug_enabled">Notify every minute</string>

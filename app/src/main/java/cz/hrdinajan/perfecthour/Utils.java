@@ -70,4 +70,31 @@ public class Utils {
         }
         return strSet;
     }
+
+    public static TreeSet<Integer> addPoint(TreeSet<Integer> minPoints) {
+
+        // First try to fill 5 minutes interval.
+        for (int i = 0; i < 60; i += 5) {
+            if (!minPoints.contains(i)) {
+                minPoints.add(i);
+                return minPoints;
+            }
+        }
+
+        // Than use any other free minute.
+        for (int i = 0; i < 60; i ++) {
+            if (!minPoints.contains(i)) {
+                minPoints.add(i);
+                return minPoints;
+            }
+        }
+        return minPoints;
+    }
+
+    public static TreeSet<Integer> removePoint(TreeSet<Integer> minPoints) {
+        if (minPoints.size() > 1) {
+            minPoints.remove(minPoints.last());
+        }
+        return minPoints;
+    }
 }
