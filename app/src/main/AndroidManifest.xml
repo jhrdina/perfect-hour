@@ -24,8 +24,7 @@
         <receiver
             android:name=".NotificationReceiver"
             android:enabled="true"
-            android:exported="true" >
-        </receiver>
+            android:exported="false"/>
 
         <activity
             android:name=".SettingsActivity"

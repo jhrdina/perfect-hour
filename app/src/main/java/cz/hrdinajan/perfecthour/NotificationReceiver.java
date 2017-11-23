@@ -43,7 +43,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                 Uri.parse(notificationSoundUriStr) : RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context)
+                new NotificationCompat.Builder(context, "main_channel")
                         .setSmallIcon(R.drawable.ic_timelapse_white_24dp)
                         .setContentTitle(context.getResources().getString(R.string.message_box_title))
                         .setContentText(context.getResources().getString(R.string.message_timesheet_not_up_to_date))
@@ -51,6 +51,7 @@ public class NotificationReceiver extends BroadcastReceiver {
                         .setSound(notificationSoundUri)
                         .setColor(ContextCompat.getColor(context, R.color.colorPrimary));
 
+        // Setup activity that is opened after notification tap
         Intent resultIntent = new Intent(context, MainActivity.class);
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
         stackBuilder.addParentStack(MainActivity.class);
@@ -58,6 +59,8 @@ public class NotificationReceiver extends BroadcastReceiver {
         PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(CONTENT_INTENT_ID, PendingIntent.FLAG_UPDATE_CURRENT);
 
         mBuilder.setContentIntent(resultPendingIntent);
+
+        // Finally show the notification
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 
