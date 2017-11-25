@@ -1,17 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PerfectHour</string>
     <string name="action_settings">Nastavení</string>
     <string name="message_box_title">Už je čas!</string>
-    <string name="message_timesheet_not_up_to_date">Čas něco udělat...</string>
+    <string name="message_timesheet_not_up_to_date">Čas něco udělat…</string>
     <string name="title_activity_settings">Nastavení</string>
-    <string name="pref_header_general">Obecné</string>
+
     <string name="pref_title_notification_sound">Zvuk notifikací</string>
+
     <string name="pref_title_vibration_enabled">Vibrace</string>
     <string name="pref_summary_vibration_enabled">Notifikace budou vibrovat</string>
     <string name="pref_summary_vibration_disabled">Notifikace nebudou vibrovat</string>
+
     <string name="pref_notification_no_sound">Tiché</string>
     <string name="pref_title_debug_enabled">Ladění aktivní</string>
     <string name="pref_summary_debug_enabled">Notifikovat každou minutu</string>
-    <string name="pref_header_notifications">Notifikace</string>
 </resources>
