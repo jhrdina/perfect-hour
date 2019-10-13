@@ -14,4 +14,6 @@
     <string name="pref_notification_no_sound">Tiché</string>
     <string name="pref_title_debug_enabled">Ladění aktivní</string>
     <string name="pref_summary_debug_enabled">Notifikovat každou minutu</string>
+
+    <string name="channel_name">Hlavní kanál</string>
 </resources>

@@ -2,6 +2,7 @@ package cz.hrdinajan.perfecthour;
 
 
 import android.app.AlarmManager;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 
@@ -13,18 +14,21 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
-import android.support.v4.content.ContextCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.TaskStackBuilder;
+import androidx.core.content.ContextCompat;
 import android.util.Log;
 
 import java.util.Calendar;
 import java.util.TreeSet;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+
 public class NotificationReceiver extends BroadcastReceiver {
     public static final int INTENT_ID = 0;
     public static final int NOTIFICATION_ID = 1;
     public static final int CONTENT_INTENT_ID = 1;
+    public static final String CHANNEL_ID = "main_channel";
 
     public static final String KEY_PREF_VIBRATION_ENABLED = "vibration_enabled";
     public static final String KEY_PREF_NOTIFICATION_SOUND = "notification_sound";
@@ -43,8 +47,20 @@ public class NotificationReceiver extends BroadcastReceiver {
         Uri notificationSoundUri = notificationSoundUriStr != "" ?
                 Uri.parse(notificationSoundUriStr) : RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = context.getString(R.string.channel_name);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
+
         NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context, "main_channel")
+                new NotificationCompat.Builder(context, CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_timelapse_white_24dp)
                         .setContentTitle(context.getResources().getString(R.string.message_box_title))
                         .setContentText(context.getResources().getString(R.string.message_timesheet_not_up_to_date))
