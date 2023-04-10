@@ -16,4 +16,6 @@
     <string name="pref_summary_debug_enabled">Notifikovat každou minutu</string>
 
     <string name="channel_name">Hlavní kanál</string>
+    <string name="main_add_point">Přidat zarážku</string>
+    <string name="main_remove_point">Odstranit zarážku</string>
 </resources>

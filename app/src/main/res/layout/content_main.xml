@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <Switch
+    <androidx.appcompat.widget.SwitchCompat
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/main_switch"
@@ -35,7 +35,8 @@
             android:layout_height="wrap_content"
             android:src="@drawable/ic_remove"
             android:id="@+id/removePointButton"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/main_remove_point" />
         <ImageButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -43,7 +44,8 @@
             android:layout_marginLeft="20dp"
             android:layout_marginStart="20dp"
             android:id="@+id/addPointButton"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/main_add_point"/>
     </LinearLayout>
 
 

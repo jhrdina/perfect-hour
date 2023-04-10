@@ -23,7 +23,7 @@ public class HourDial extends View {
         void onChange(TreeSet<Integer> minPoints);
     }
 
-    private static final int colors[] = new int[] {
+    private static final int[] colors = new int[] {
             Color.parseColor("#00bcd4"),
             Color.parseColor("#ffc107"),
             Color.parseColor("#f44336")

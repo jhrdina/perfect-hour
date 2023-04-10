@@ -16,4 +16,7 @@
     <string name="pref_summary_debug_enabled">Notify every minute</string>
 
     <string name="channel_name">Main channel</string>
+
+    <string name="main_add_point">Add marker</string>
+    <string name="main_remove_point">Remove marker</string>
 </resources>

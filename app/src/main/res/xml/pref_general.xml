@@ -1,25 +1,24 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!-- Allows the user to choose a ringtone in the 'notification' category. -->
     <!-- NOTE: This preference will be enabled only when the checkbox above is checked. -->
     <!-- NOTE: RingtonePreference's summary should be set to its value by the activity code. -->
-    <RingtonePreference
-        android:key="notification_sound"
-        android:title="@string/pref_title_notification_sound"
-        android:ringtoneType="notification"
-        android:defaultValue="content://settings/system/notification_sound" />
+    <Preference
+        app:key="notification_sound"
+        app:title="@string/pref_title_notification_sound"
+        app:defaultValue="content://settings/system/notification_sound" />
 
     <CheckBoxPreference
-        android:key="vibration_enabled"
-        android:title="@string/pref_title_vibration_enabled"
-        android:summaryOn="@string/pref_summary_vibration_enabled"
-        android:summaryOff="@string/pref_summary_vibration_disabled"
-        android:defaultValue="true" />
+        app:key="vibration_enabled"
+        app:title="@string/pref_title_vibration_enabled"
+        app:summaryOn="@string/pref_summary_vibration_enabled"
+        app:summaryOff="@string/pref_summary_vibration_disabled"
+        app:defaultValue="true" />
 
     <CheckBoxPreference
-        android:key="debug_enabled"
-        android:title="@string/pref_title_debug_enabled"
-        android:summaryOn="@string/pref_summary_debug_enabled"
-        android:defaultValue="false" />
+        app:key="debug_enabled"
+        app:title="@string/pref_title_debug_enabled"
+        app:summaryOn="@string/pref_summary_debug_enabled"
+        app:defaultValue="false" />
 
 </PreferenceScreen>

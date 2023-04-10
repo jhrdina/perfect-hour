@@ -14,15 +14,16 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.TaskStackBuilder;
 import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 
 import java.util.Calendar;
 import java.util.TreeSet;
-
-import static androidx.core.content.ContextCompat.getSystemService;
 
 public class NotificationReceiver extends BroadcastReceiver {
     public static final int INTENT_ID = 0;
@@ -42,9 +43,9 @@ public class NotificationReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         String notificationSoundUriStr = sharedPref.getString(KEY_PREF_NOTIFICATION_SOUND, "");
-        Boolean vibrationEnabled = sharedPref.getBoolean(KEY_PREF_VIBRATION_ENABLED, true);
+        boolean vibrationEnabled = sharedPref.getBoolean(KEY_PREF_VIBRATION_ENABLED, true);
 
-        Uri notificationSoundUri = notificationSoundUriStr != "" ?
+        Uri notificationSoundUri = notificationSoundUriStr.equals("") ?
                 Uri.parse(notificationSoundUriStr) : RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         // Create the NotificationChannel, but only on API 26+ because
@@ -91,12 +92,12 @@ public class NotificationReceiver extends BroadcastReceiver {
     }
 
     public static void setEnabled(boolean enabled, Context context, Intent alarmIntent) {
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, INTENT_ID, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, INTENT_ID, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | getImmutableFlag());
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
         if (enabled) {
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
-            Boolean debugEnabled = sharedPref.getBoolean(KEY_PREF_DEBUG_ENABLED, false);
+            boolean debugEnabled = sharedPref.getBoolean(KEY_PREF_DEBUG_ENABLED, false);
             TreeSet<Integer> minPoints = debugEnabled
                     ? Utils.getDebugMinutePoints()
                     : Utils.minutePointsFromStringSet(sharedPref.getStringSet(KEY_PREF_MINUTE_POINTS, null));
@@ -118,9 +119,18 @@ public class NotificationReceiver extends BroadcastReceiver {
             alarmManager.cancel(pendingIntent);
         }
     }
-
+    
     public static boolean isEnabled(Context context) {
         Intent alarmIntent = new Intent(context, NotificationReceiver.class);
-        return PendingIntent.getBroadcast(context, INTENT_ID, alarmIntent, PendingIntent.FLAG_NO_CREATE) != null;
+        return PendingIntent.getBroadcast(
+                context,
+                INTENT_ID,
+                alarmIntent,
+                PendingIntent.FLAG_NO_CREATE | getImmutableFlag()
+        ) != null;
+    }
+
+    private static int getImmutableFlag() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_IMMUTABLE : 0;
     }
 }
