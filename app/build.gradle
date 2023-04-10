@@ -14,7 +14,7 @@ android {
         applicationId "cz.hrdinajan.perfecthour"
         minSdkVersion 15
         targetSdkVersion 33
-        versionCode 4
+        versionCode 5
         versionName "1.4"
         signingConfig signingConfigs.release
     }
