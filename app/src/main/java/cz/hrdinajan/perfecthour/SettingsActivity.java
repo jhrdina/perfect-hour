@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -51,7 +52,7 @@ public class SettingsActivity extends AppCompatActivity {
      * activity is showing a two-pane settings UI.
      */
     public static class GeneralPreferenceFragment extends PreferenceFragmentCompat
-                                                  implements SharedPreferences.OnSharedPreferenceChangeListener {
+            implements SharedPreferences.OnSharedPreferenceChangeListener {
         public static final String KEY_PREF_DEBUG_ENABLED = "debug_enabled";
         public static final String KEY_PREF_NOTIFICATION_SOUND = "notification_sound";
 
@@ -60,6 +61,7 @@ public class SettingsActivity extends AppCompatActivity {
             super.onResume();
             Objects.requireNonNull(getPreferenceScreen().getSharedPreferences())
                     .registerOnSharedPreferenceChangeListener(this);
+            syncProps();
         }
 
         @Override
@@ -78,55 +80,19 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setHasOptionsMenu(true);
-
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-
-            bindPreferenceSummaryToValue(Objects.requireNonNull(findPreference(KEY_PREF_NOTIFICATION_SOUND)));
         }
 
         /**
          * A preference value change listener that updates the preference's summary
          * to reflect its new value.
          */
-        private final static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = (preference, value) -> {
-            String stringValue = value.toString();
-
+        private final Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = (preference, value) -> {
             Log.d("perfect", "Pref change " + preference.getKey() + " " + value.toString());
-
-            if (preference.getKey().equals(KEY_PREF_NOTIFICATION_SOUND)) {
-                // For ringtone preferences, look up the correct display value
-                // using RingtoneManager.
-                if (TextUtils.isEmpty(stringValue)) {
-                    // Empty values correspond to 'silent' (no ringtone).
-                    preference.setSummary(R.string.pref_notification_no_sound);
-
-                } else {
-                    Ringtone ringtone = RingtoneManager.getRingtone(
-                            preference.getContext(), Uri.parse(stringValue));
-
-                    if (ringtone == null) {
-                        // Clear the summary if there was a lookup error.
-                        preference.setSummary(null);
-                    } else {
-                        // Set the summary to reflect the new ringtone display
-                        // name.
-                        String name = ringtone.getTitle(preference.getContext());
-                        preference.setSummary(name);
-                    }
-                }
-
-            } else {
-                // For all other preferences, set the summary to the value's
-                // simple string representation.
-                preference.setSummary(stringValue);
-            }
+            syncProps();
             return true;
         };
 
-        private static void bindPreferenceSummaryToValue(Preference preference) {
+        private void bindPreferenceSummaryToValue(Preference preference) {
             // Set the listener to watch for value changes.
             preference.setOnPreferenceChangeListener(sBindPreferenceSummaryToValueListener);
 
@@ -135,6 +101,53 @@ public class SettingsActivity extends AppCompatActivity {
                     PreferenceManager
                             .getDefaultSharedPreferences(preference.getContext())
                             .getString(preference.getKey(), ""));
+        }
+
+        private String getPreferenceString(String propKey, String defValue) {
+            return PreferenceManager
+                    .getDefaultSharedPreferences(requireContext())
+                    .getString(propKey, defValue);
+        }
+
+        private void syncNotificationSoundProp() {
+            // Notification Sound
+            String notificationSound = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    // Sound is set in the specific notification channel
+                    ? NotificationReceiver.ensureNotificationChannel(requireActivity())
+                    .getSound()
+                    .toString()
+                    // Or stored in app preferences for older Android versions
+                    : getPreferenceString(
+                    KEY_PREF_NOTIFICATION_SOUND,
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION).toString()
+            );
+
+
+            Preference notificationSoundPref = findPreference(KEY_PREF_NOTIFICATION_SOUND);
+            assert notificationSoundPref != null;
+            // For ringtone preferences, look up the correct display value
+            // using RingtoneManager.
+            if (TextUtils.isEmpty(notificationSound)) {
+                // Empty values correspond to 'silent' (no ringtone).
+                notificationSoundPref.setSummary(R.string.pref_notification_no_sound);
+            } else {
+                Ringtone ringtone = RingtoneManager.getRingtone(
+                        notificationSoundPref.getContext(), Uri.parse(notificationSound));
+
+                if (ringtone == null) {
+                    // Clear the summary if there was a lookup error.
+                    notificationSoundPref.setSummary(null);
+                } else {
+                    // Set the summary to reflect the new ringtone display
+                    // name.
+                    String name = ringtone.getTitle(notificationSoundPref.getContext());
+                    notificationSoundPref.setSummary(name);
+                }
+            }
+        }
+
+        private void syncProps() {
+            syncNotificationSoundProp();
         }
 
         @Override
@@ -154,31 +167,42 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
+        private void showRingtonePicker(Preference preference) {
+            Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, Settings.System.DEFAULT_NOTIFICATION_URI);
+
+            String existingValue = Objects.requireNonNull(preference.getSharedPreferences())
+                    .getString(KEY_PREF_NOTIFICATION_SOUND, null);
+            if (existingValue != null) {
+                if (existingValue.length() == 0) {
+                    // Select "Silent"
+                    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, (Uri) null);
+                } else {
+                    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(existingValue));
+                }
+            } else {
+                // No ringtone has been selected, set to the default
+                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Settings.System.DEFAULT_NOTIFICATION_URI);
+            }
+
+            ringtonePickerActivityResultLauncher.launch(intent);
+        }
+
         @Override
         public boolean onPreferenceTreeClick(Preference preference) {
             if (preference.getKey().equals(KEY_PREF_NOTIFICATION_SOUND)) {
-                Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
-                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION);
-                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
-                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true);
-                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, Settings.System.DEFAULT_NOTIFICATION_URI);
-
-                String existingValue = Objects.requireNonNull(preference.getSharedPreferences())
-                        .getString(KEY_PREF_NOTIFICATION_SOUND, null);
-                if (existingValue != null) {
-                    if (existingValue.length() == 0) {
-                        // Select "Silent"
-                        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, (Uri) null);
-                    } else {
-                        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(existingValue));
-                    }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // For notification channels, you configure the sound in the system settings
+                    Intent intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+                    intent.putExtra(Settings.EXTRA_APP_PACKAGE, requireActivity().getPackageName());
+                    intent.putExtra(Settings.EXTRA_CHANNEL_ID, NotificationReceiver.CHANNEL_ID);
+                    startActivity(intent);
                 } else {
-                    // No ringtone has been selected, set to the default
-                    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Settings.System.DEFAULT_NOTIFICATION_URI);
+                    showRingtonePicker(preference);
                 }
-
-                ringtonePickerActivityResultLauncher.launch(intent);
-//                startActivityForResult(intent, REQUEST_CODE_ALERT_RINGTONE);
                 return true;
             } else {
                 return super.onPreferenceTreeClick(preference);
@@ -195,12 +219,9 @@ public class SettingsActivity extends AppCompatActivity {
 
                         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(requireActivity()).edit();
                         editor.putString(KEY_PREF_NOTIFICATION_SOUND, newRingtone);
-                        editor.apply();
+                        editor.commit();
 
-                        sBindPreferenceSummaryToValueListener.onPreferenceChange(
-                                findPreference(KEY_PREF_NOTIFICATION_SOUND),
-                                newRingtone
-                        );
+                        syncProps();
                     }
                 });
     }
