@@ -16,6 +16,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
@@ -59,6 +60,17 @@ public class NotificationReceiver extends BroadcastReceiver {
         }
     }
 
+    private static void ensureExactAlarmPermissions(Context context) {
+        if (Build.VERSION.SDK_INT < 34) {
+            return;
+        }
+
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (!alarmManager.canScheduleExactAlarms()) {
+            context.startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM));
+        }
+    }
+
     public static void setEnabled(boolean enabled, Context context) {
         Intent alarmIntent = new Intent(context, NotificationReceiver.class);
         setEnabled(enabled, context, alarmIntent);
@@ -70,6 +82,7 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         if (enabled) {
             ensureNotificationPermissions(context);
+            ensureExactAlarmPermissions(context);
 
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
             boolean debugEnabled = sharedPref.getBoolean(KEY_PREF_DEBUG_ENABLED, false);
