@@ -97,11 +97,7 @@ public class NotificationReceiver extends BroadcastReceiver {
             Calendar next = Utils.findNext(minPoints);
             Log.d("perfect", next.toString());
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pendingIntent);
-            } else {
-                alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pendingIntent);
-            }
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pendingIntent);
 
         } else {
             alarmManager.cancel(pendingIntent);
